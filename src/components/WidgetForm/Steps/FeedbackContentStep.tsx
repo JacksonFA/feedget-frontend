@@ -1,6 +1,6 @@
 import { ArrowLeft } from "phosphor-react";
 import { FormEvent, useState } from "react";
-import { FeedbackType, feedbackTypes } from ".."
+import { FeedbackType, feedbackTypes } from "..";
 import { api } from "../../../lib/api";
 import { CloseButton } from "../../CloseButton"
 import { Loading } from "../../Loading";
@@ -10,12 +10,14 @@ interface FeedbackContentStepProps {
     feedbackType: FeedbackType;
     onFeedbackRestartRequested: () => void;
     onFeedbackSent: () => void;
+    onFeedbackError: (messageError: string) => void;
 }
 
 export function FeedbackContentStep({
     feedbackType,
     onFeedbackRestartRequested,
-    onFeedbackSent
+    onFeedbackSent,
+    onFeedbackError
 }: FeedbackContentStepProps) {
     const [screenshot, setScreenshot] = useState<string | null>(null)
     const [comment, setComment] = useState('')
@@ -24,17 +26,22 @@ export function FeedbackContentStep({
     const feedbackTypeInfo = feedbackTypes[feedbackType]
 
     async function handleSubmitFeedback(event: FormEvent) {
-        event.preventDefault();
-        setIsSendingFeedback(true);
+        event.preventDefault()
+        setIsSendingFeedback(true)
 
-        await api.post('/feedbacks', {
-            type: feedbackType,
-            comment,
-            screenshot,
-        });
+        try {
+            await api.post('/feedbacks', {
+                type: feedbackType,
+                comment,
+                screenshot,
+            });
 
-        setIsSendingFeedback(true);
-        onFeedbackSent()
+            setIsSendingFeedback(false)
+            onFeedbackSent()
+        } catch (error: any) {
+            setIsSendingFeedback(false)
+            onFeedbackError(error?.response.data.message)
+        }
     }
 
     return (
